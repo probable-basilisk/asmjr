@@ -2,14 +2,11 @@ use std::vec::Vec;
 use std::collections::HashMap;
 use crate::ops::{Op, OpErr, parse_op};
 
-// use pest::{
-//     iterators::{Pair, Pairs},
-// };
 use pest_derive::Parser;
 use pest::Parser;
 
 #[derive(Parser)]
-#[grammar = "asm.pest"] // relative to src
+#[grammar = "asm.pest"]
 struct AsmParser;
 
 const MAX_REGISTERS: usize = 256;

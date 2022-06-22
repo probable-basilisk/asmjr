@@ -94,10 +94,10 @@ static OPS: phf::Map<&'static str, OpInfo> = phf_map! {
 
 #[derive(Debug, Clone, Default)]
 pub struct COp {
-  opcode: u8,
-  rd: u8,
-  rs1: u8,
-  rs2: u8,
+  pub opcode: u8,
+  pub rd: u8,
+  pub rs1: u8,
+  pub rs2: u8,
 }
 
 impl COp {
@@ -113,8 +113,8 @@ impl COp {
 
 #[derive(Debug, Clone, Default)]
 pub struct Op {
-  op: COp,
-  imm: f64,
+  pub op: COp,
+  pub imm: f64,
 }
 
 #[derive(Debug)]
@@ -136,7 +136,7 @@ fn parse_immediate(token: &str, pc: u32, rel: bool, labels: &HashMap<String, u32
   if let Ok(barenum) = parse_int::parse::<i64>(token) {
     return Ok(barenum as f64)
   }
-  // Not a numeric literal, must be a label
+  // Not a numeric literal, try as a label
   let labelpos = match labels.get(token) {
     Some(pos) => pos,
     None => return Err(OpErr::InvalidImmediate(token.to_owned()))
@@ -150,7 +150,7 @@ fn parse_immediate(token: &str, pc: u32, rel: bool, labels: &HashMap<String, u32
 
 fn parse_register(token: &str, aliases: &HashMap<String, u8>) -> Result<u8, OpErr> {
   // Allow numeric literals as register designations
-  if let Ok(barenum) = token.parse::<u8>() {
+  if let Ok(barenum) = parse_int::parse::<u8>(token) {
     return Ok(barenum)
   }
   match aliases.get(token) {
