@@ -10,6 +10,6 @@ fn main() {
     return;
   }
   let sourcefile = read_to_string(args[1].clone()).unwrap();
-  parser::parse(&sourcefile);
+  parser::parse(&sourcefile).unwrap();
   println!("Done");
 }

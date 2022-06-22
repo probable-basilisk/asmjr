@@ -92,7 +92,7 @@ static OPS: phf::Map<&'static str, OpInfo> = phf_map! {
   "atan" => OpInfo{opcode: 70, argct: 3, args: [OpArg::Rd, OpArg::Rs1, OpArg::Rs2], rel: false},
 };
 
-#[derive(Clone, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct COp {
   opcode: u8,
   rd: u8,
@@ -111,7 +111,7 @@ impl COp {
   }
 }
 
-#[derive(Clone, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct Op {
   op: COp,
   imm: f64,
@@ -121,21 +121,25 @@ pub struct Op {
 pub enum OpErr {
   Impossible,
   EmptyOp,
+  InvalidAlias(String),
   InvalidOpcode(String),
   InvalidArgumentCount(usize),
   InvalidImmediate(String),
   InvalidRegister(String)
 }
 
-fn parse_immediate(token: &String, pc: u32, rel: bool, labels: &HashMap<String, u32>) -> Result<f64, OpErr> {
+fn parse_immediate(token: &str, pc: u32, rel: bool, labels: &HashMap<String, u32>) -> Result<f64, OpErr> {
   // Any numeric literal immediate will be left untouched
   if let Ok(barenum) = token.parse::<f64>() {
     return Ok(barenum)
   }
+  if let Ok(barenum) = parse_int::parse::<i64>(token) {
+    return Ok(barenum as f64)
+  }
   // Not a numeric literal, must be a label
   let labelpos = match labels.get(token) {
     Some(pos) => pos,
-    None => return Err(OpErr::InvalidImmediate(token.clone()))
+    None => return Err(OpErr::InvalidImmediate(token.to_owned()))
   };
   if rel {
     Ok((*labelpos as f64) - (pc as f64))
@@ -144,32 +148,32 @@ fn parse_immediate(token: &String, pc: u32, rel: bool, labels: &HashMap<String, 
   }
 }
 
-fn parse_register(token: &String, aliases: &HashMap<String, u8>) -> Result<u8, OpErr> {
+fn parse_register(token: &str, aliases: &HashMap<String, u8>) -> Result<u8, OpErr> {
   // Allow numeric literals as register designations
   if let Ok(barenum) = token.parse::<u8>() {
     return Ok(barenum)
   }
   match aliases.get(token) {
     Some(reg) => Ok(*reg),
-    None => Err(OpErr::InvalidRegister(token.clone()))
+    None => Err(OpErr::InvalidRegister(token.to_owned()))
   }
 }
 
-pub fn parse_op(tokens: &Vec<String>, pc: u32, labels: &HashMap<String, u32>, aliases: &HashMap<String, u8>) -> Result<Op, OpErr> {
+pub fn parse_op(tokens: &Vec<&str>, pc: u32, labels: &HashMap<String, u32>, aliases: &HashMap<String, u8>) -> Result<Op, OpErr> {
   let name = match tokens.get(0) {
     Some(name) => name,
     _ => return Err(OpErr::EmptyOp)
   };
   let info = match OPS.get(name) {
     Some(info) => info,
-    _ => return Err(OpErr::InvalidOpcode(name.clone())),
+    _ => return Err(OpErr::InvalidOpcode(name.to_string())),
   };
   if tokens.len() - 1 != info.argct {
     return Err(OpErr::InvalidArgumentCount(tokens.len()-1));
   };
   let mut ret = Op::default();
   ret.op.opcode = info.opcode;
-  for (token, arg) in tokens.iter().zip(info.args.iter()) {
+  for (token, arg) in tokens[1..].iter().zip(info.args.iter()) {
     match arg {
       OpArg::Void => {return Err(OpErr::Impossible)},
       OpArg::Im => {
