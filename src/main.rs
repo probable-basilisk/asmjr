@@ -18,7 +18,7 @@ struct Args {
 
   /// Output ECJR cartridge file
   #[clap(value_parser)]
-  output: String,
+  output: Option<String>,
 
   /// Load image (red channel only) into rom
   #[clap(short, long, value_parser)]
@@ -31,6 +31,10 @@ struct Args {
   /// Leave cart body uncompressed
   #[clap(short, long, action)]
   uncompressed: bool,
+
+  /// Dump out ops to terminal
+  #[clap(short, long, action)]
+  listing: bool,
 }
 
 
@@ -56,7 +60,15 @@ fn main() {
     }
   };
 
-  let cartdata = cartridge::pack_cartridge(None, videorom, &ops, !args.uncompressed);
-  fs::write(&args.output, &cartdata).expect("Failed to write output file!");
-  println!("Wrote {} bytes to {}.", cartdata.len(), args.output);
+  if args.listing {
+    parser::print_ops(&ops);
+  }
+
+  if let Some(output) = args.output {
+    let cartdata = cartridge::pack_cartridge(None, videorom, &ops, !args.uncompressed);
+    fs::write(&output, &cartdata).expect("Failed to write output file!");
+    println!("Wrote {} bytes to {}.", cartdata.len(), output);
+  } else {
+    println!("No output file specified.");
+  }
 }
