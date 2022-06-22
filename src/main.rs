@@ -8,6 +8,7 @@ mod compression;
 mod cartridge;
 mod vrom;
 mod memmap;
+mod metadata;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -27,6 +28,18 @@ struct Args {
   /// Load raw bytes into rom
   #[clap(short, long, value_parser)]
   rawrom: Option<String>,
+
+  /// Author to embed into metadata
+  #[clap(long, value_parser)]
+  author: Option<String>,
+
+  /// Readme file to embed in metadata
+  #[clap(long, value_parser)]
+  readme: Option<String>,
+
+  /// Simple message to embed in metadata
+  #[clap(short, long, value_parser)]
+  message: Option<String>,
 
   /// Leave cart body uncompressed
   #[clap(short, long, action)]
@@ -64,8 +77,16 @@ fn main() {
     parser::print_ops(&ops);
   }
 
+  let readme = match args.readme {
+    Some(filename) => Some(read_to_string(filename).expect("Failed to read readme file!")),
+    None => args.message
+  };
+
+  let metadata = metadata::format_metadata(args.author, readme);
+  println!("Metadata: {}", metadata);
+
   if let Some(output) = args.output {
-    let cartdata = cartridge::pack_cartridge(None, videorom, &ops, !args.uncompressed);
+    let cartdata = cartridge::pack_cartridge(Some(metadata), videorom, &ops, !args.uncompressed);
     fs::write(&output, &cartdata).expect("Failed to write output file!");
     println!("Wrote {} bytes to {}.", cartdata.len(), output);
   } else {
