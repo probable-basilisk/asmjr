@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+message Cartridge {
+  bytes metadata = 1;
+  bytes program = 2;
+  bytes videorom = 3;
+}
