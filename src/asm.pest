@@ -5,11 +5,11 @@ pretty_much_anything = { !(WHITESPACE | NEWLINE | "," | ":") ~ ANY }
 token = @{ pretty_much_anything+ }
 
 comment = { "#" ~ (!NEWLINE ~ ANY)* }
+alias = { token ~ ":=" ~ token }
 label = { token ~ ":" }
 op = { token ~ (token ~ (","? ~ token)*)? }
 empty = @{ WHITESPACE* }
-alias = { token ~ ":=" ~ token }
 
 line = _{ (comment | alias | label | op | empty) ~ NEWLINE }
 
-program = _{ line* }
+program = _{SOI ~ line* ~ EOI}
