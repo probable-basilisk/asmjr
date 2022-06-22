@@ -5,6 +5,7 @@ mod ops;
 mod parser;
 mod compression;
 mod cartridge;
+mod vrom;
 
 fn main() {
   let args: Vec<String> = env::args().collect();
@@ -21,7 +22,9 @@ fn main() {
     }
   };
   
-  let cartdata = cartridge::pack_cartridge(None, None, &ops, true);
+  let videorom = vrom::load_image_rom("rom.png");
+
+  let cartdata = cartridge::pack_cartridge(None, Some(videorom), &ops, true);
   fs::write("cart.cart", cartdata).unwrap();
   println!("We wrote something!");
 }
