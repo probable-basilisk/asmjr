@@ -178,10 +178,10 @@ fn parse_register(token: &str, aliases: &HashMap<String, u8>) -> Result<u8, OpEr
 
 pub fn parse_op(tokens: &Vec<&str>, pc: u32, labels: &HashMap<String, u32>, aliases: &HashMap<String, u8>) -> Result<Op, OpErr> {
   let name = match tokens.get(0) {
-    Some(name) => name,
+    Some(name) => name.to_lowercase(),
     _ => return Err(OpErr::EmptyOp)
   };
-  let info = match OPS.get(name) {
+  let info = match OPS.get(&name) {
     Some(info) => info,
     _ => return Err(OpErr::InvalidOpcode(name.to_string())),
   };
