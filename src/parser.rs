@@ -41,14 +41,14 @@ fn add_alias(aliases: &mut HashMap<String, u8>, newname: &str, aliased: &str) ->
 
 #[derive(Debug)]
 pub enum ParseErr {
-  Impossible,
+  Generic(String),
   Line(usize, String, String)
 }
 
 impl ToString for ParseErr {
   fn to_string(&self) -> String {
     match self {
-      ParseErr::Impossible => "This shouldn't be happening!".to_string(),
+      ParseErr::Generic(s) => format!("Parse error: {}", s),
       ParseErr::Line(pos, line, msg) => 
         format!("Parse error on line {} [\"{}\"]: {}", pos+1, line, msg),
     }
@@ -78,7 +78,8 @@ fn parse_err(operr: OpErr, linepos: usize, line: &str) -> ParseErr {
 }
 
 pub fn parse(src: &String) -> Result<Vec<Op>, ParseErr> {
-  let lines = AsmParser::parse(Rule::program, src).unwrap_or_else(|e| panic!("{}", e));
+  let lines = AsmParser::parse(Rule::program, src)
+    .map_err(|e| ParseErr::Generic(e.to_string()))?;
 
   // an op can refer to a label that's defined further in the program,
   // so need to do a prepass to find label locations
