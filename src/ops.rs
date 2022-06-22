@@ -123,9 +123,26 @@ pub enum OpErr {
   EmptyOp,
   InvalidAlias(String),
   InvalidOpcode(String),
-  InvalidArgumentCount(usize),
+  InvalidArgumentCount(usize, usize),
   InvalidImmediate(String),
   InvalidRegister(String)
+}
+
+impl ToString for OpErr {
+  fn to_string(&self) -> String {
+    match self {
+      OpErr::Impossible => "This shouldn't be possible!".to_string(),
+      OpErr::EmptyOp => "Empty opcode (grammar problem?)".to_string(),
+      OpErr::InvalidAlias(s) => format!("Invalid alias: \"{}\"", s),
+      OpErr::InvalidOpcode(s) => format!("Unrecognized opcode: [{}]", s),
+      OpErr::InvalidArgumentCount(got, expected) => 
+        format!("Wrong number of arguments: got {}, expected {}", got, expected),
+      OpErr::InvalidImmediate(s) => 
+        format!("Immediate \"{}\" is not a literal or known label", s),
+      OpErr::InvalidRegister(s) => 
+        format!("Register \"{}\" is not a literal or known alias", s),
+    }
+  }
 }
 
 fn parse_immediate(token: &str, pc: u32, rel: bool, labels: &HashMap<String, u32>) -> Result<f64, OpErr> {
@@ -169,7 +186,7 @@ pub fn parse_op(tokens: &Vec<&str>, pc: u32, labels: &HashMap<String, u32>, alia
     _ => return Err(OpErr::InvalidOpcode(name.to_string())),
   };
   if tokens.len() - 1 != info.argct {
-    return Err(OpErr::InvalidArgumentCount(tokens.len()-1));
+    return Err(OpErr::InvalidArgumentCount(tokens.len()-1, info.argct));
   };
   let mut ret = Op::default();
   ret.op.opcode = info.opcode;

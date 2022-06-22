@@ -2,12 +2,14 @@ WHITESPACE = _{ " " | "\t" }
 
 pretty_much_anything = { !(WHITESPACE | NEWLINE | "," | ":") ~ ANY }
 
-token = @{ pretty_much_anything+ }
+value = @{ pretty_much_anything+ }
+name = @{ pretty_much_anything+ }
 
 comment = { "#" ~ (!NEWLINE ~ ANY)* }
-alias = { token ~ ":=" ~ token }
-label = { token ~ ":" }
-op = { token ~ (token ~ (","? ~ token)*)? }
+
+alias = { name ~ ":=" ~ value }
+label = { name ~ ":" }
+op = { name ~ (value ~ (","? ~ value)*)? }
 empty = @{ WHITESPACE* }
 
 line = _{ (comment | alias | label | op | empty) ~ NEWLINE }

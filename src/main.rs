@@ -12,7 +12,13 @@ fn main() {
     return;
   }
   let sourcefile = read_to_string(args[1].clone()).unwrap();
-  let ops = parser::parse(&sourcefile).unwrap();
+  let ops = match parser::parse(&sourcefile) {
+    Ok(ops) => ops,
+    Err(e) => {
+      println!("{}", e.to_string());
+      return;
+    }
+  };
   
   let cartdata = cartridge::pack_cartridge(None, None, &ops, false);
   fs::write("cart.cart", cartdata).unwrap();
