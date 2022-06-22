@@ -103,7 +103,7 @@ pub fn parse(src: &String) -> Result<Vec<Op>, ParseErr> {
         let tokens: Vec<&str> = line.into_inner().map(|pair| { pair.as_str() }).collect();
         let op = parse_op(&tokens, pc, &labels, &aliases)
           .map_err(|e| parse_err(e, linepos, linestr))?;
-        println!("op: {:?}", op);
+        //println!("op: {:?}", op);
         ops.push(op);
       },
       _ => {}
