@@ -145,7 +145,7 @@ impl ToString for OpErr {
   }
 }
 
-fn parse_immediate(token: &str, pc: u32, rel: bool, labels: &HashMap<String, u32>) -> Result<f64, OpErr> {
+fn parse_immediate(token: &str, pc: u32, rel: bool, constants: &HashMap<String, f64>) -> Result<f64, OpErr> {
   // Any numeric literal immediate will be left untouched
   if let Ok(barenum) = token.parse::<f64>() {
     return Ok(barenum)
@@ -154,14 +154,14 @@ fn parse_immediate(token: &str, pc: u32, rel: bool, labels: &HashMap<String, u32
     return Ok(barenum as f64)
   }
   // Not a numeric literal, try as a label
-  let labelpos = match labels.get(token) {
+  let labelpos = match constants.get(token) {
     Some(pos) => pos,
     None => return Err(OpErr::InvalidImmediate(token.to_owned()))
   };
   if rel {
-    Ok((*labelpos as f64) - (pc as f64))
+    Ok((*labelpos) - (pc as f64))
   } else {
-    Ok(*labelpos as f64)
+    Ok(*labelpos)
   }
 }
 
@@ -176,7 +176,7 @@ fn parse_register(token: &str, aliases: &HashMap<String, u8>) -> Result<u8, OpEr
   }
 }
 
-pub fn parse_op(tokens: &Vec<&str>, pc: u32, labels: &HashMap<String, u32>, aliases: &HashMap<String, u8>) -> Result<Op, OpErr> {
+pub fn parse_op(tokens: &Vec<&str>, pc: u32, constants: &HashMap<String, f64>, aliases: &HashMap<String, u8>) -> Result<Op, OpErr> {
   let name = match tokens.get(0) {
     Some(name) => name.to_lowercase(),
     _ => return Err(OpErr::EmptyOp)
@@ -194,7 +194,7 @@ pub fn parse_op(tokens: &Vec<&str>, pc: u32, labels: &HashMap<String, u32>, alia
     match arg {
       OpArg::Void => {return Err(OpErr::Impossible)},
       OpArg::Im => {
-        ret.imm = parse_immediate(token, pc, info.rel, labels)?;
+        ret.imm = parse_immediate(token, pc, info.rel, constants)?;
       },
       _ => {
         ret.op.set_arg(arg, parse_register(token, aliases)?);

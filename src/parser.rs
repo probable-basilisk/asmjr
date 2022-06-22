@@ -1,6 +1,7 @@
 use std::vec::Vec;
 use std::collections::HashMap;
 use crate::ops::{Op, OpErr, parse_op};
+use crate::memmap::add_memmap_constants;
 
 use pest_derive::Parser;
 use pest::Parser;
@@ -21,22 +22,34 @@ fn default_aliases() -> HashMap<String, u8> {
   aliases
 }
 
-fn add_alias(aliases: &mut HashMap<String, u8>, newname: &str, aliased: &str) -> Result<(), OpErr> {
-  if let Ok(v) = parse_int::parse::<u8>(aliased) {
-    aliases.insert(newname.to_string(), v);
+fn add_alias(aliases: &mut HashMap<String, u8>, name: &str, value: &str) -> Result<(), OpErr> {
+  if let Ok(v) = parse_int::parse::<u8>(value) {
+    aliases.insert(name.to_string(), v);
     return Ok(())
   }
-  match aliases.get(aliased) {
+  match aliases.get(value) {
     Some(v) => { 
       // borrow checker complains if we don't separate this
       let v = *v; 
-      aliases.insert(newname.to_string(), v); 
+      aliases.insert(name.to_string(), v); 
       Ok(())
     },
     _ => {
-      Err(OpErr::InvalidAlias(aliased.to_string()))
+      Err(OpErr::InvalidAlias(value.to_string()))
     }
   }
+}
+
+fn add_constant(constants: &mut HashMap<String, f64>, name: &str, value: &str) -> Result<(), OpErr> {
+  if let Ok(barenum) = value.parse::<f64>() {
+    constants.insert(name.to_string(), barenum);
+    return Ok(())
+  }
+  if let Ok(barenum) = parse_int::parse::<i64>(value) {
+    constants.insert(name.to_string(), barenum as f64);
+    return Ok(())
+  }
+  Err(OpErr::InvalidImmediate(value.to_string()))
 }
 
 #[derive(Debug)]
@@ -55,14 +68,14 @@ impl ToString for ParseErr {
   }
 }
 
-fn find_labels(lines: Pairs<Rule>) -> HashMap<String, u32> {
-  let mut labels: HashMap<String, u32> = HashMap::new();
+fn find_labels(lines: Pairs<Rule>) -> HashMap<String, f64> {
+  let mut labels: HashMap<String, f64> = HashMap::new();
   let mut pc: u32 = 0;
   for line in lines.clone() {
     match line.as_rule() {
       Rule::label => {
         let label = line.into_inner().next().unwrap().as_str();
-        labels.insert(label.to_string(), pc);
+        labels.insert(label.to_string(), pc as f64);
       },
       Rule::op => {
         pc += 1;
@@ -83,7 +96,8 @@ pub fn parse(src: &String) -> Result<Vec<Op>, ParseErr> {
 
   // an op can refer to a label that's defined further in the program,
   // so need to do a prepass to find label locations
-  let labels = find_labels(lines.clone());
+  let mut constants = find_labels(lines.clone());
+  add_memmap_constants(&mut constants);
   let mut aliases = default_aliases();
   let mut ops: Vec<Op> = Vec::new();
 
@@ -94,14 +108,21 @@ pub fn parse(src: &String) -> Result<Vec<Op>, ParseErr> {
     match line.as_rule() {
       Rule::alias => {
         let mut inner = line.into_inner();
-        let newname = inner.next().unwrap().as_str();
-        let aliased = inner.next().unwrap().as_str();
-        add_alias(&mut aliases, newname, aliased)
+        let name = inner.next().unwrap().as_str();
+        let value = inner.next().unwrap().as_str();
+        add_alias(&mut aliases, name, value)
+          .map_err(|e| parse_err(e, linepos, linestr))?
+      },
+      Rule::constant => {
+        let mut inner = line.into_inner();
+        let name = inner.next().unwrap().as_str();
+        let value = inner.next().unwrap().as_str();
+        add_constant(&mut constants, name, value)
           .map_err(|e| parse_err(e, linepos, linestr))?
       },
       Rule::op => {
         let tokens: Vec<&str> = line.into_inner().map(|pair| { pair.as_str() }).collect();
-        let op = parse_op(&tokens, pc, &labels, &aliases)
+        let op = parse_op(&tokens, pc, &constants, &aliases)
           .map_err(|e| parse_err(e, linepos, linestr))?;
         //println!("op: {:?}", op);
         ops.push(op);

@@ -7,6 +7,7 @@ mod parser;
 mod compression;
 mod cartridge;
 mod vrom;
+mod memmap;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
