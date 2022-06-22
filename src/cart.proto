@@ -1,7 +1,9 @@
 syntax = "proto3";
 
+package ecjr.cart;
+
 message Cartridge {
-  bytes metadata = 1;
+  string metadata = 1;
   bytes program = 2;
   bytes videorom = 3;
 }
