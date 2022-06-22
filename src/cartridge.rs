@@ -1,5 +1,6 @@
 use std::vec::Vec;
 use crate::ops::Op;
+use crate::compression::compress_bytes;
 
 use prost::Message;
 
@@ -58,14 +59,21 @@ pub fn pack_cartridge(metadata: Option<String>, videorom: Option<Vec<u8>>, progr
   // Unwrap is safe, since we have reserved sufficient capacity in the vector.
   cartridge_body.encode(&mut serialized_body).unwrap();
   let uncompressed_size = serialized_body.len() as u32;
-  let compressed_size = 0u32;
+  let (compressed_size, final_body) = if compress {
+    let original_size = serialized_body.len();
+    let compressed = compress_bytes(&serialized_body);
+    println!("Compressed {} -> {}", original_size, compressed.len());
+    (compressed.len() as u32, compressed)
+  } else {
+    (0u32, serialized_body)
+  };
 
-  // TODO: compression
+
   let mut final_data: Vec<u8> = Vec::new();
   final_data.extend_from_slice("ECJRV004".as_bytes());
   final_data.extend_from_slice(&uncompressed_size.to_le_bytes());
   final_data.extend_from_slice(&compressed_size.to_le_bytes());
-  final_data.extend(serialized_body);
+  final_data.extend(final_body);
 
   final_data
 }

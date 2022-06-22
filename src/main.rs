@@ -3,6 +3,7 @@ use std::fs::read_to_string;
 use std::fs;
 mod ops;
 mod parser;
+mod compression;
 mod cartridge;
 
 fn main() {
@@ -20,7 +21,7 @@ fn main() {
     }
   };
   
-  let cartdata = cartridge::pack_cartridge(None, None, &ops, false);
+  let cartdata = cartridge::pack_cartridge(None, None, &ops, true);
   fs::write("cart.cart", cartdata).unwrap();
   println!("We wrote something!");
 }
