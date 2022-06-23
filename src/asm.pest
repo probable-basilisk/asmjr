@@ -5,7 +5,7 @@ pretty_much_anything = { !(WHITESPACE | NEWLINE | "," | ":") ~ ANY }
 value = @{ pretty_much_anything+ }
 name = @{ pretty_much_anything+ }
 
-comment = { "#" ~ (!NEWLINE ~ ANY)* }
+comment = { ("#" | "//") ~ (!NEWLINE ~ ANY)* }
 
 alias = { "reg" ~ name ~ "=" ~ value }
 constant = { "const" ~ name ~ "=" ~ value }
