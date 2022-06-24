@@ -21,11 +21,11 @@ bne zero, x1, NOT_CORE_ZERO
 // enable video and three sprites, point sprite buffer to 
 // the area of memory we 'claimed' above
 li x1, 1
-store x1, zero, VIDEO_ENABLE
+store x1, zero, $VIDEO_ENABLE
 li x1, 3
-store x1, zero, VIDEO_SPRITE_COUNT
+store x1, zero, $VIDEO_SPRITE_COUNT
 li x1, SPRITES
-store x1, zero, VIDEO_SPRITE_BUFFER_ADDR
+store x1, zero, $VIDEO_SPRITE_BUFFER_ADDR
 
 NOT_CORE_ZERO:
 
