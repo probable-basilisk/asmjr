@@ -35,6 +35,6 @@ const MEMMAP: &[&str] = &[
 
 pub fn add_memmap_constants(constants: &mut HashMap<String, f64>) {
     for (addr, name) in MEMMAP.iter().enumerate() {
-        constants.insert(name.to_string(), addr as f64);
+        constants.insert(format!("${}", name.to_string()), addr as f64);
     }
 }

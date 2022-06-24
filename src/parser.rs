@@ -16,6 +16,10 @@ const MAX_REGISTERS: usize = 256;
 fn default_aliases() -> HashMap<String, u8> {
     let mut aliases: HashMap<String, u8> = HashMap::new();
     aliases.insert("zero".to_string(), 0);
+    aliases.insert("ra".to_string(), 1);
+    aliases.insert("sp".to_string(), 2);
+    aliases.insert("gp".to_string(), 3);
+    aliases.insert("tp".to_string(), 4);
     for reg_idx in 0..MAX_REGISTERS {
         aliases.insert(format!("x{}", reg_idx), reg_idx as u8);
     }
