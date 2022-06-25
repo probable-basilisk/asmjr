@@ -92,7 +92,7 @@ static OPS: phf::Map<&'static str, OpInfo> = phf_map! {
   "atan" => OpInfo{opcode: 70, argct: 3, args: [OpArg::Rd, OpArg::Rs1, OpArg::Rs2], rel: false},
 };
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct COp {
     pub opcode: u8,
     pub rd: u8,
@@ -111,13 +111,13 @@ impl COp {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Op {
     pub op: COp,
     pub imm: f64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum OpErr {
     Impossible,
     EmptyOp,
@@ -156,10 +156,13 @@ pub fn string_literal_to_immediate(lit: &str) -> Option<f64> {
     }
     let mut val: f64 = 0.0;
     let mut mult: f64 = 1.0;
+    let mut escaped = false;
     for c in bstr[1..bstr.len()-1].iter() {
-        if *c == b'"' {
+        if !escaped && *c == b'\\' {
+            escaped = true;
             continue
         }
+        escaped = false;
         val += (*c as f64)*mult;
         mult *= 256.0;
     }
@@ -237,4 +240,103 @@ pub fn parse_op(
         }
     }
     Ok(ret)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_string_literal() {
+        assert_eq!(string_literal_to_immediate(r#""""#), Some(0.0));
+        assert_eq!(string_literal_to_immediate(r#""a""#), Some(b'a' as f64));
+        assert_eq!(string_literal_to_immediate(r#""\"""#), Some(b'"' as f64));
+        assert_eq!(string_literal_to_immediate(r#""\\""#), Some(b'\\' as f64));
+        assert_eq!(string_literal_to_immediate(r#""ab""#), Some((b'a' as f64) + 256.0*(b'b' as f64)));
+        // space is 0x20, P is 0x50: literals are encoded little endian, 
+        // so we have to write our hex constant 'backwards'
+        assert_eq!(string_literal_to_immediate(r#""     P""#), Some(0x502020202020i64 as f64));
+        assert_eq!(string_literal_to_immediate(r#""abcdef""#), Some(0x666564636261i64 as f64));
+        assert_eq!(string_literal_to_immediate(r#""\\\\""#), Some((b'\\' as f64) + 256.0*(b'\\' as f64)));
+
+        assert!(string_literal_to_immediate("a").is_none());
+        assert!(string_literal_to_immediate(r#""a"#).is_none());
+    }
+
+    #[test]
+    fn test_immediate() {
+        let mut constants: HashMap<String, f64> = HashMap::new();
+        constants.insert("THETA".to_string(), 17.0);
+        constants.insert("LABELONE".to_string(), 40.0);
+
+        assert_eq!(parse_immediate("+30", 0, false, &constants), Ok(30.0));
+        assert_eq!(parse_immediate("+30.0", 0, false, &constants), Ok(30.0));
+        assert_eq!(parse_immediate("-30", 0, false, &constants), Ok(-30.0));
+        assert_eq!(parse_immediate("-30.0", 0, false, &constants), Ok(-30.0));
+        assert_eq!(parse_immediate("0xFF", 0, false, &constants), Ok(255.0));
+        assert_eq!(parse_immediate("THETA", 0, false, &constants), Ok(17.0));
+        assert_eq!(parse_immediate("56.25", 0, false, &constants), Ok(56.25));
+        assert_eq!(parse_immediate(r#""abcdef""#, 0, false, &constants), Ok(0x666564636261i64 as f64));
+        assert_eq!(parse_immediate("LABELONE", 30, false, &constants), Ok(40.0));
+        assert_eq!(parse_immediate("LABELONE", 30, true, &constants), Ok(10.0));
+        assert_eq!(parse_immediate("LABELONE", 50, true, &constants), Ok(-10.0));
+    }
+
+    #[test]
+    fn test_op() {
+        let mut constants: HashMap<String, f64> = HashMap::new();
+        constants.insert("THETA".to_string(), 17.0);
+        constants.insert("LABELONE".to_string(), 40.0);
+
+        let mut aliases: HashMap<String, u8> = HashMap::new();
+        aliases.insert("zero".to_string(), 0);
+        aliases.insert("x1".to_string(), 1);
+        aliases.insert("x2".to_string(), 2);
+
+        // too many arguments for NOP
+        assert!(
+            parse_op(&vec!["nop", "x1", "zero", "3"], 0, &constants, &aliases).is_err()
+        );
+        // too few arguments for add
+        assert!(
+            parse_op(&vec!["add", "x1", "zero"], 0, &constants, &aliases).is_err()
+        );
+        // THETA shouldn't parse as a register for ADD
+        assert!(
+            parse_op(&vec!["add", "x1", "zero", "THETA"], 0, &constants, &aliases).is_err()
+        );
+        // blorp isn't a valid opcode
+        assert!(
+            parse_op(&vec!["blorp", "x1", "zero", "THETA"], 0, &constants, &aliases).is_err()
+        );
+        assert_eq!(
+            parse_op(&vec!["add", "x1", "zero", "3"], 0, &constants, &aliases),
+            Ok(Op{ 
+                op: COp{ opcode: 12, rd: 1, rs1: 0, rs2: 3 }, 
+                imm: 0.0 
+            })
+        );
+        assert_eq!(
+            parse_op(&vec!["Muli", "x2", "x1", "THETA"], 0, &constants, &aliases),
+            Ok(Op{ 
+                op: COp{ opcode: 17, rd: 2, rs1: 1, rs2: 0 }, 
+                imm: 17.0 
+            })
+        );
+        // BEQ is a relative jump, so the immediate should become label-pc = 30
+        assert_eq!(
+            parse_op(&vec!["BEQ", "2", "3", "LABELONE"], 10, &constants, &aliases),
+            Ok(Op{ 
+                op: COp{ opcode: 54, rd: 0, rs1: 2, rs2: 3 }, 
+                imm: 30.0 
+            })
+        );
+        assert_eq!(
+            parse_op(&vec!["jalr", "x1", "3", "LABELONE"], 10, &constants, &aliases),
+            Ok(Op{ 
+                op: COp{ opcode: 53, rd: 1, rs1: 3, rs2: 0 }, 
+                imm: 40.0 
+            })
+        );
+    }
 }
