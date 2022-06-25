@@ -1,5 +1,5 @@
 use crate::memmap::add_memmap_constants;
-use crate::ops::{parse_op, parse_immediate, Op, OpErr};
+use crate::ops::{parse_immediate, parse_op, Op, OpErr};
 use std::collections::HashMap;
 use std::vec::Vec;
 
@@ -51,8 +51,8 @@ fn add_constant(
         Ok(value) => {
             constants.insert(name.to_string(), value);
             Ok(())
-        },
-        Err(e) => Err(e)
+        }
+        Err(e) => Err(e),
     }
 }
 

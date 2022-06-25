@@ -1,4 +1,4 @@
-use asmjr::{parser, cartridge, metadata, vrom};
+use asmjr::{cartridge, metadata, parser, vrom};
 use clap::Parser;
 use std::fs;
 use std::fs::read_to_string;
