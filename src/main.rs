@@ -1,14 +1,7 @@
+use asmjr::{parser, cartridge, metadata, vrom};
 use clap::Parser;
 use std::fs;
 use std::fs::read_to_string;
-
-mod cartridge;
-mod compression;
-mod memmap;
-mod metadata;
-mod ops;
-mod parser;
-mod vrom;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
