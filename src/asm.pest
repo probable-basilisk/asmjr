@@ -1,8 +1,12 @@
 WHITESPACE = _{ " " | "\t" }
 
-pretty_much_anything = { !(WHITESPACE | NEWLINE | "," | ":" | "[" | "]") ~ ANY }
+quote = _{ "\"" }
+pretty_much_anything = { !(WHITESPACE | NEWLINE | quote | "," | ":" | "[" | "]") ~ ANY }
+escape = _{ "\\" ~ ANY }
 
-value = @{ pretty_much_anything+ }
+strlit = { quote ~ ( escape | (!quote ~ ANY) )* ~ quote }
+
+value = @{ strlit | pretty_much_anything+ }
 name = @{ pretty_much_anything+ }
 
 comment = _{ ("#" | "//" | ";") ~ (!NEWLINE ~ ANY)* }

@@ -9,7 +9,7 @@
 const SPRITES = 0x200 // comments can be on the same line
 const TAU = 6.28318
 const can_be_lowercase_or_whatever = 0b1010101
-const Ω = 10000
+const Ω = "hello!"
 
 // the builtin register names are
 // x0 x1 x2 x3 x4 ... x255
@@ -28,6 +28,7 @@ muli temp, temp, 2
 // Opcodes look like this (can be uppercase or lowercase)
 li x1, 12
 LI x2, Ω
+addi x3, zero, "a"
 nop
 add x1, x1, x2
 jal zero, LABEL_DECLARED_LATER

@@ -149,12 +149,33 @@ impl ToString for OpErr {
     }
 }
 
-fn parse_immediate(
+pub fn string_literal_to_immediate(lit: &str) -> Option<f64> {
+    let bstr = lit.as_bytes();
+    if bstr.len() < 2 || bstr[0] != b'"' || bstr[bstr.len()-1] != b'"' {
+        return None
+    }
+    let mut val: f64 = 0.0;
+    let mut mult: f64 = 1.0;
+    for c in bstr[1..bstr.len()-1].iter() {
+        if *c == b'"' {
+            continue
+        }
+        val += (*c as f64)*mult;
+        mult *= 256.0;
+    }
+    Some(val)
+}
+
+pub fn parse_immediate(
     token: &str,
     pc: u32,
     rel: bool,
     constants: &HashMap<String, f64>,
 ) -> Result<f64, OpErr> {
+    // A string literal is encoded into an f64
+    if let Some(barenum) = string_literal_to_immediate(token) {
+        return Ok(barenum);
+    }
     // Any numeric literal immediate will be left untouched
     if let Ok(barenum) = token.parse::<f64>() {
         return Ok(barenum);

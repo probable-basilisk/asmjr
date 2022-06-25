@@ -1,5 +1,5 @@
 use crate::memmap::add_memmap_constants;
-use crate::ops::{parse_op, Op, OpErr};
+use crate::ops::{parse_op, parse_immediate, Op, OpErr};
 use std::collections::HashMap;
 use std::vec::Vec;
 
@@ -47,15 +47,13 @@ fn add_constant(
     name: &str,
     value: &str,
 ) -> Result<(), OpErr> {
-    if let Ok(barenum) = value.parse::<f64>() {
-        constants.insert(name.to_string(), barenum);
-        return Ok(());
+    match parse_immediate(value, 0, false, constants) {
+        Ok(value) => {
+            constants.insert(name.to_string(), value);
+            Ok(())
+        },
+        Err(e) => Err(e)
     }
-    if let Ok(barenum) = parse_int::parse::<i64>(value) {
-        constants.insert(name.to_string(), barenum as f64);
-        return Ok(());
-    }
-    Err(OpErr::InvalidImmediate(value.to_string()))
 }
 
 #[derive(Debug)]
