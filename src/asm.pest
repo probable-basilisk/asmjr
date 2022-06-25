@@ -1,18 +1,21 @@
 WHITESPACE = _{ " " | "\t" }
 
-pretty_much_anything = { !(WHITESPACE | NEWLINE | "," | ":") ~ ANY }
+pretty_much_anything = { !(WHITESPACE | NEWLINE | "," | ":" | "[" | "]") ~ ANY }
 
 value = @{ pretty_much_anything+ }
 name = @{ pretty_much_anything+ }
 
-comment = { ("#" | "//") ~ (!NEWLINE ~ ANY)* }
+comment = _{ ("#" | "//" | ";") ~ (!NEWLINE ~ ANY)* }
 
 alias = { "reg" ~ name ~ "=" ~ value }
 constant = { "const" ~ name ~ "=" ~ value }
 label = { name ~ ":" }
-op = { name ~ (value ~ (","? ~ value)*)? }
+op = { 
+    ( name ~ (value ~ ",")* ~ value ~ "[" ~ value ~ "]" )
+  | ( name ~ (value ~ (","? ~ value)*)? )
+}
 empty = @{ WHITESPACE* }
 
-line = _{ (comment | alias | constant | label | op | empty) ~ NEWLINE }
+line = _{ (comment | alias | constant | label | op | empty) ~ comment? ~ NEWLINE }
 
 program = _{SOI ~ line* ~ EOI}

@@ -98,8 +98,10 @@ fn parse_err(operr: OpErr, linepos: usize, line: &str) -> ParseErr {
 }
 
 pub fn parse(src: &String) -> Result<Vec<Op>, ParseErr> {
+    // the grammar requires a newline at the end so just always give it one
+    let src = src.to_owned() + "\n";
     let lines =
-        AsmParser::parse(Rule::program, src).map_err(|e| ParseErr::Generic(e.to_string()))?;
+        AsmParser::parse(Rule::program, &src).map_err(|e| ParseErr::Generic(e.to_string()))?;
 
     // an op can refer to a label that's defined further in the program,
     // so need to do a prepass to find label locations
