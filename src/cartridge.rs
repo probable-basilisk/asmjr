@@ -53,9 +53,9 @@ pub fn pack_cartridge(
         None => Vec::new(),
     };
     let cartridge_body = cart::Cartridge {
-        metadata: metadata,
+        metadata,
+        videorom,
         program: serialize_ops(program),
-        videorom: videorom,
     };
 
     let mut serialized_body = Vec::new();

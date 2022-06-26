@@ -87,10 +87,7 @@ fn main() {
 
     let videorom = match args.imagerom {
         Some(filename) => Some(vrom::load_image_rom(&filename)),
-        None => match args.rawrom {
-            Some(filename) => Some(vrom::load_file_rom(&filename)),
-            None => None,
-        },
+        None => args.rawrom.map(|filename| vrom::load_file_rom(&filename)),
     };
 
     let readme = match args.readme {

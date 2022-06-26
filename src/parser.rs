@@ -140,7 +140,7 @@ pub fn parse(src: &String) -> Result<Vec<Op>, ParseErr> {
     Ok(ops)
 }
 
-pub fn print_ops(ops: &Vec<Op>) {
+pub fn print_ops(ops: &[Op]) {
     for (pc, op) in ops.iter().enumerate() {
         println!("{}: {:?}", pc, op);
     }
