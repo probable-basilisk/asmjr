@@ -18,7 +18,7 @@ const SIZESIZE: usize = 4;
 // [4 bytes: LE u32 of opcount]
 // [8 bytes * opcount: op immediates]
 // [4 bytes * opcount: op data]
-pub fn serialize_ops(oplist: &Vec<Op>) -> Vec<u8> {
+pub fn serialize_ops(oplist: &[Op]) -> Vec<u8> {
     let mut data: Vec<u8> = Vec::with_capacity(SIZESIZE + oplist.len() * OPSIZE);
 
     let size_bytes = (oplist.len() as u32).to_le_bytes();
@@ -41,25 +41,18 @@ pub fn serialize_ops(oplist: &Vec<Op>) -> Vec<u8> {
 pub fn pack_cartridge(
     metadata: Option<String>,
     videorom: Option<Vec<u8>>,
-    program: &Vec<Op>,
+    program: &[Op],
     compress: bool,
 ) -> Vec<u8> {
-    let metadata = match metadata {
-        Some(meta) => meta,
-        None => "{}".to_string(),
-    };
-    let videorom = match videorom {
-        Some(rom) => rom,
-        None => Vec::new(),
-    };
+    let metadata = metadata.unwrap_or_else(|| "{}".to_string());
+    let videorom = videorom.unwrap_or_default();
     let cartridge_body = cart::Cartridge {
         metadata,
         videorom,
         program: serialize_ops(program),
     };
 
-    let mut serialized_body = Vec::new();
-    serialized_body.reserve(cartridge_body.encoded_len());
+    let mut serialized_body = Vec::with_capacity(cartridge_body.encoded_len());
     // Unwrap is safe, since we have reserved sufficient capacity in the vector.
     cartridge_body.encode(&mut serialized_body).unwrap();
     let uncompressed_size = serialized_body.len() as u32;
@@ -72,7 +65,7 @@ pub fn pack_cartridge(
         (0u32, serialized_body)
     };
 
-    let mut final_data: Vec<u8> = Vec::new();
+    let mut final_data: Vec<u8> = Vec::with_capacity(16 + final_body.len());
     final_data.extend_from_slice("ECJRV004".as_bytes());
     final_data.extend_from_slice(&uncompressed_size.to_le_bytes());
     final_data.extend_from_slice(&compressed_size.to_le_bytes());
