@@ -23,6 +23,9 @@ fn default_aliases() -> HashMap<String, u8> {
     for reg_idx in 0..MAX_REGISTERS {
         aliases.insert(format!("x{}", reg_idx), reg_idx as u8);
     }
+    for temp_idx in 0..=10 {
+        aliases.insert(format!("t{}", temp_idx), (5 + temp_idx) as u8);
+    }
     aliases
 }
 

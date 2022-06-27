@@ -16,7 +16,7 @@ constant = { "const" ~ name ~ "=" ~ value }
 label = { name ~ ":" }
 op = { 
     ( name ~ (value ~ ",")* ~ value ~ "[" ~ value ~ "]" )
-  | ( name ~ (value ~ (","? ~ value)*)? )
+  | ( name ~ (value ~ ("," ~ value)*)? )
 }
 empty = @{ WHITESPACE* }
 
