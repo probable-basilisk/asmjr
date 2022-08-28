@@ -10,29 +10,50 @@ pub mod cart {
 }
 
 // 4 bytes for (opcode, rd, rs1, rs2), 8 bytes for double immediate
-const OPSIZE: usize = 12;
-// u32
-const SIZESIZE: usize = 4;
+const OPREGSIZE: usize = 4;
+const OPIMMSIZE: usize = 8;
+// 3 * u32
+const SIZESIZE: usize = 12;
 
 // The program serialization format is:
 // [4 bytes: LE u32 of opcount]
-// [8 bytes * opcount: op immediates]
-// [4 bytes * opcount: op data]
+// [4 bytes: LE u32 offset of op data in buffer]
+// [4 bytes: LE u32 offset of immediates in buffer]
+// [data]
 pub fn serialize_ops(oplist: &[Op]) -> Vec<u8> {
-    let mut data: Vec<u8> = Vec::with_capacity(SIZESIZE + oplist.len() * OPSIZE);
-
-    let size_bytes = (oplist.len() as u32).to_le_bytes();
-    data.extend_from_slice(&size_bytes);
-
-    for op in oplist.iter() {
-        data.extend_from_slice(&op.imm.to_le_bytes());
+    let reg_offset: u32 = SIZESIZE as u32;
+    let mut imm_offset: u32 = (SIZESIZE + oplist.len() * OPREGSIZE) as u32;
+    if imm_offset % (OPIMMSIZE as u32) != 0 {
+        // Align immediate data to its data size (double = 8 bytes)
+        // (might matter on some platforms where unaligned memory access
+        //  has a significant performance penalty [ARM mac?])
+        let pad = (OPIMMSIZE as u32) - (imm_offset % (OPIMMSIZE as u32));
+        imm_offset += pad;
     }
+    let datasize: usize = (imm_offset as usize) + OPIMMSIZE * oplist.len();
+    let mut data: Vec<u8> = Vec::with_capacity(datasize);
+
+    let opcount_bytes = (oplist.len() as u32).to_le_bytes();
+    data.extend_from_slice(&opcount_bytes);
+
+    let reg_offset_bytes = reg_offset.to_le_bytes();
+    data.extend_from_slice(&reg_offset_bytes);
+
+    let imm_offset_bytes = imm_offset.to_le_bytes();
+    data.extend_from_slice(&imm_offset_bytes);
 
     for op in oplist.iter() {
         data.push(op.op.opcode);
         data.push(op.op.rd);
         data.push(op.op.rs1);
         data.push(op.op.rs2);
+    }
+
+    // fill the padding/alignment gap with zeros
+    data.resize(imm_offset as usize, 0);
+
+    for op in oplist.iter() {
+        data.extend_from_slice(&op.imm.to_le_bytes());
     }
 
     data
@@ -66,7 +87,7 @@ pub fn pack_cartridge(
     };
 
     let mut final_data: Vec<u8> = Vec::with_capacity(16 + final_body.len());
-    final_data.extend_from_slice("ECJRV004".as_bytes());
+    final_data.extend_from_slice("ECJRV005".as_bytes());
     final_data.extend_from_slice(&uncompressed_size.to_le_bytes());
     final_data.extend_from_slice(&compressed_size.to_le_bytes());
     final_data.extend(final_body);
