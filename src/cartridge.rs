@@ -87,7 +87,7 @@ pub fn pack_cartridge(
     };
 
     let mut final_data: Vec<u8> = Vec::with_capacity(16 + final_body.len());
-    final_data.extend_from_slice("ECJRV005".as_bytes());
+    final_data.extend_from_slice("ECJRV006".as_bytes());
     final_data.extend_from_slice(&uncompressed_size.to_le_bytes());
     final_data.extend_from_slice(&compressed_size.to_le_bytes());
     final_data.extend(final_body);
