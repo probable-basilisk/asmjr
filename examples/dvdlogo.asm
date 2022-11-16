@@ -1,5 +1,8 @@
 // Shows three spinning dvd logos
 // (make sure to use dvdlogo.png as the videorom!)
+%language asm
+// Note that asmjr treats directives like the above as just
+// weird comments at the moment!
 
 // the first row of memory 0x0000 - 0x0100 has special meanings,
 // but other than that we can use anything else 0x0100 - 0xffff freely

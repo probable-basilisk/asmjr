@@ -8,8 +8,9 @@ strlit = { quote ~ ( escape | (!quote ~ ANY) )* ~ quote }
 
 value = @{ strlit | pretty_much_anything+ }
 name = @{ pretty_much_anything+ }
+remainder = @{ (!NEWLINE ~ ANY)* }
 
-comment = _{ ("#" | "//" | ";") ~ (!NEWLINE ~ ANY)* }
+comment = _{ ("//" | "%" | "#" | ";") ~ remainder }
 
 alias = { "reg" ~ name ~ "=" ~ value }
 constant = { "const" ~ name ~ "=" ~ value }
