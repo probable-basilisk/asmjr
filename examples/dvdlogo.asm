@@ -81,6 +81,6 @@ subi ypos, ypos, HALFH
 store xpos, cursprite, 4
 store ypos, cursprite, 5
 
-// kill with condition 1 means 'yield until next frame'
-kill zero, 1
+// yield with condition 1 means 'yield until next frame'
+yield zero, 1
 jal zero, FRAMELOOP
