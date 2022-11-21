@@ -25,7 +25,7 @@ pub fn assemble_simple(src: &str, rom: &[u8], dest: &mut [u8]) -> i32 {
             return -(copied as i32);
         }
     };
-    let vrom = if rom.len() > 0 {
+    let vrom = if !rom.is_empty() {
         Some(rom.to_vec())
     } else {
         None
@@ -33,6 +33,6 @@ pub fn assemble_simple(src: &str, rom: &[u8], dest: &mut [u8]) -> i32 {
 
     let data = cartridge::pack_cartridge(None, vrom, &ops, true);
     let ncopied = bounded_copy(dest, &data);
-    
+
     ncopied as i32
 }
