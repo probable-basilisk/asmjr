@@ -1,7 +1,9 @@
-use asmjr::{cartridge, metadata, parser, vrom};
+use asmjr::{cartridge, metadata, parser};
 use clap::Parser;
 use std::fs;
 use std::fs::read_to_string;
+
+pub mod vrom;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]

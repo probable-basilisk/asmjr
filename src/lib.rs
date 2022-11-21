@@ -5,4 +5,3 @@ pub mod cartridge;
 pub mod metadata;
 pub mod ops;
 pub mod parser;
-pub mod vrom;
