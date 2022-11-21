@@ -98,7 +98,7 @@ fn parse_err(operr: OpErr, linepos: usize, line: &str) -> ParseErr {
     ParseErr::Line(linepos, line.to_string(), operr.to_string())
 }
 
-pub fn parse(src: &String) -> Result<Vec<Op>, ParseErr> {
+pub fn parse(src: &str) -> Result<Vec<Op>, ParseErr> {
     // the grammar requires a newline at the end so just always give it one
     let src = src.to_owned() + "\n";
     let lines =
